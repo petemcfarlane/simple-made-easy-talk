@@ -1,3 +1,4 @@
+build-lists: true
 
 # Hello
 
@@ -7,7 +8,7 @@
 Been using PHP for 6 years. Became a developer by accident, started writing wordpress websites, themes and plugins,
 gradually became more aware and interested in other frameworks/technologies, design paradigms - Object Oriented
 Programming, Design Patterns, TDD, BDD, DDD, Event Sourcing and so on. I'm currently looking at Functional Programming
-but that's not what todays talk is entirely about so you can talk to me later about that if you wish.
+but that's not what today's talk is entirely about so you can talk to me later about that if you wish.
 
 ---
 
@@ -27,10 +28,11 @@ but that's not what todays talk is entirely about so you can talk to me later ab
 
 ---
 
-# How to write code you won't hate
+# How to write code you won't hate tomorrow
 # <:poop:/> 😫:angry:
 
 ^ Not exhaustive, but my experiences - some ideas/tips
+please ask questions, if something isn't clear or you have suggestions
 
 ---
 
@@ -76,9 +78,10 @@ but that's not what todays talk is entirely about so you can talk to me later ab
 ## how do we measure code quality?
 
 can we:
-    - read it easily
-    - reason about it clearly
-    - replace it quickly
+
+- read it easily
+- reason about it clearly
+- replace it quickly
 
 ^ not only files and layout, but project file structure. Uncle Bob says: Your architectures should tell readers about the system, not about the frameworks you used in your system [*](http://blog.8thlight.com/uncle-bob/2011/09/30/Screaming-Architecture.html)
 avoid large n-path complexity levels, global state variables, 100 line methods
@@ -88,24 +91,17 @@ Successful business change and adapt if there software can. Is the software goin
 
 ## readable
 
-small functions/classes
-good names
-avoid nested code (ifs/loops) - extract methods
-avoid `else`
-`return` early or use a guard clause
-avoid negation `!`
+- small functions/classes
+- good names
+- avoid nested code (ifs/loops) - extract methods
+- avoid `else`
+- `return` early or use a guard clause
+- avoid negation `!`
 
 ^ SRP
 refactor names
-TODO example openhours kata, function isOpen($date);
-7 stages of naming things:
-Missing
-Nonsense
-Honest
-Honest and Complete
-Does the Right Thing
-Intent
-Domain Abstraction
+Ubiquitous language
+npath complexity
 
 ---
 
@@ -114,7 +110,7 @@ $data = $db->query("INSERT LONG, COMPLICATED SQL QUERY HERE");
 
 echo '<ul>';
 for ($i = 0; $i < count($data); $i++) {
-    echo '<li>$data[$i][0] - $data[$i][1]</li>';
+    echo "<li>$data[$i][0] - $data[$i][1]</li>";
 }
 echo '</ul>';
 
@@ -155,6 +151,48 @@ return array_reduce($people, function ($html, $person) {
     return $html . "<li>{$person['name']} - {$person['email']}</li>";
 }, '<ul>') . '</ul>;
 
+```
+
+---
+
+```
+Input:
+ _     _  _     _  _  _  _  _ 
+| |  | _| _||_||_ |_   ||_||_|
+|_|  ||_  _|  | _||_|  ||_| _|
+
+Output:
+"0123456789"
+```
+
+---
+
+```
+return implode(array_map(function ($char) {
+    return $this->translate($char);
+}, array_map('implode', transpose(array_map(function ($line) {
+    return str_split($line, 3);
+}, explode("\n", $ascii))))));
+```
+
+---
+
+```
+$lines = explode("\n", $ascii);
+​
+$chunksOf3 = array_map(function ($line) {
+    return str_split($line, 3);
+}, $lines);
+​
+$transposed = transpose($chunksOf3);
+​
+$characters = array_map('implode', $transposed);
+​
+$numbers = array_map(function ($char) {
+    return $this->translate($char);
+}, $characters);
+​
+return implode($numbers);
 ```
 
 ---
@@ -245,29 +283,6 @@ private function handleBallPotted($state, BallPotted $event)
     ...
     if ($ball instanceof RedBall) {
         $state[$player] += $points;
-    } else {
-        if ($this->playerPreviouslyPottedARedBall($lastEvent, $player)) {
-            $state[$player] += $points;
-        } else {
-            if (...) {
-                ...
-            } else {
-                ...
-            }
-        }
-    }
-    ...
-}
-```
-
----
-
-```
-private function handleBallPotted($state, BallPotted $event)
-{
-    ...
-    if ($ball instanceof RedBall) {
-        $state[$player] += $points;
     } elseif ($this->playerPreviouslyPottedARedBall($lastEvent, $player)) {
         $state[$player] += $points;
     } else {
@@ -280,13 +295,16 @@ private function handleBallPotted($state, BallPotted $event)
     ...
 }
 ```
+
 ---
 
 ```
 private function handleBallPotted($state, BallPotted $event)
 {
     ...
-    if ($ball instanceof RedBall || $this->playerPreviouslyPottedARedBall($lastEvent, $player)) {
+    if ($ball instanceof RedBall
+        || $this->playerPreviouslyPottedARedBall($lastEvent, $player)
+    ) {
         $state[$player] += $points;
     } else {
         if (...) {
@@ -302,24 +320,29 @@ private function handleBallPotted($state, BallPotted $event)
 ---
 
 ```
-private function handleBallPotted(Score $currentScore, BallPotted $ballPotted, $lastEvent)
+private function handleBallPotted($score, $ballPotted, $lastEvent)
 {
     $points = $ballPotted->getBall()->getValue();
     $player = $ballPotted->byPlayer();
 
-    if ($ballPotted->isRed() || $this->playerPreviouslyPottedRedBall($lastEvent, $player)) {
-        return $currentScore->awardPointsToPlayer($points, $player);
+    if ($ballPotted->isRed()
+        || $this->playerPreviouslyPottedRedBall($lastEvent, $player)
+    ) {
+        return $score->awardPointsToPlayer($points, $player);
     }
 
-    return $currentScore->awardPointsToOpponent(max(4, $points), $player);
+    return $score->awardPointsToOpponent(max(4, $points), $player);
 }
 ```
 
 ---
 
-```
-<?php
+> Good code doesn't just emerge by accident
+-- Me
 
+---
+
+```
 function example()
 {
     $data = ...;
@@ -336,8 +359,6 @@ function example()
 ---
 
 ```
-<?php
-
 function example()
 {
     $data = ...;
@@ -354,8 +375,6 @@ function example()
 ---
 
 ```
-<?php
-
 function example()
 {
     $data = ...;
@@ -370,8 +389,6 @@ function example()
 ---
 
 ```
-<?php
-
 function example()
 {
     $data = ...;
@@ -385,8 +402,6 @@ function example()
 ---
 
 ```
-<?php
-
 function example()
 {
     $data = ...;
@@ -397,8 +412,6 @@ function example()
 ---
 
 ```
-<?php
-
 function example()
 {
     $data = ...;
@@ -410,19 +423,19 @@ function example()
 
 ## understandable
 
-small, composable functions - that do one thing
-hide complexity
-good names - variables, functions, namespaces, classes
-small public API
-TDD
-Value objects
-Avoid state - Immutable data structures
+- small, composable functions - that do one thing
+- hide complexity
+- good names - variables, functions, namespaces, classes
+- small public API
+- TDD
+- Value objects
 
 ^     - relative worth - a particular magnitude, precise meaning or significance
     - can be shared
     - easy to fabricate
     - semantically transparent
     - attract behaviour
+- Avoid state - Immutable data structures
 
 ---
 
@@ -433,13 +446,13 @@ Avoid state - Immutable data structures
 ```
 <?php
 
-$d = Distance::fromKm(10); // 10 km
+$d = 10;
 
-$t = Time::fromSeconds(3600); // 1 hr
+$t = 3600;
 
-$s = Speed::fromDistanceAndTime($d, $t); // 10 kmph
+$s = $d / t;
 
-echo $s->asMph(); // will print 16.093
+echo $s;
 
 ```
 
@@ -459,7 +472,7 @@ class Distance
         return $d;
     }
 
-    public function getKm()
+    public function asKm()
     {
         return $this->km;
     }
@@ -482,30 +495,9 @@ class Time
         return $t;
     }
 
-    public function getHours()
+    public function inHours()
     {
         return $this->seconds / 3600;
-    }
-}
-```
-
----
-
-```
-class Speed
-{
-    private $kmph;
-
-    public static function fromKmph($kmph)
-    {
-        $s = new static;
-        $s->kmph = $kmph;
-        return $s;
-    }
-
-    public function asMph()
-    {
-        return $this->kmph * 1.6093;
     }
 }
 ```
@@ -520,7 +512,7 @@ class Speed
     public static function fromDistanceAndTime(Distance $d, Time $t)
     {
         $s = new static;
-        $s->kmph = $d->getKm() / $t->getHours();
+        $s->kmph = $d->asKm() / $t->inHours();
         return $s;
     }
 
@@ -551,31 +543,42 @@ echo $s->asMph(); // will print 16.093
 
 ## adaptable
 
-Things change - new business knowledge/rules, changing technologies
-small functions/classes/modules
-throw away code
-dependency injection
-NO CODE IS SIMPLER THAN NO CODE
-be abstract, use interfaces
+- Things change - new business knowledge/rules, changing technologies
+- small functions/classes/modules
+- throw away code
+- dependency injection
+- be abstract, use interfaces
 
-^- don't go overboard with factories/design patterns (example - injecting date factory)
+^ - don't go overboard with factories/design patterns (example - injecting date factory)
  - use polymorphism
  - when you only have a hammer everything becomes a nail
  - hide complexity and implementation
  - follow language of domain
+
+---
+
+# NO CODE IS SIMPLER THAN NO CODE
+
 ---
 
 ## Simple enables change = Opportunity
 
 ---
 
-do katas - readable, efficient, flexible
-exercism.io
-Pair program
-code review
-read others code bases
-mentor http://phpmentoring.org
-conferences
-user groups
-write a blog
+- do katas - readable, efficient, flexible
+- exercism.io, projecteuler.net
+- pair/mob program
+- code review
+- read others code bases
+- mentor at http://phpmentoring.org
+- attend/speak conferences & user groups
+- write a blog
 
+---
+
+
+# Goodbye
+
+### @PeteJMcFarlane
+
+^ thanks to Tom, & audience
