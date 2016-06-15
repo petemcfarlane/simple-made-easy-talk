@@ -84,7 +84,7 @@ can we:
 - replace it quickly
 
 ^ not only files and layout, but project file structure. Uncle Bob says: Your architectures should tell readers about the system, not about the frameworks you used in your system [*](http://blog.8thlight.com/uncle-bob/2011/09/30/Screaming-Architecture.html)
-avoid large n-path complexity levels, global state variables, 100 line methods
+global state variables, 100 line methods
 Successful business change and adapt if there software can. Is the software going to help or hinder?
 
 ---
@@ -111,6 +111,32 @@ $data = $db->query("INSERT LONG, COMPLICATED SQL QUERY HERE");
 echo '<ul>';
 for ($i = 0; $i < count($data); $i++) {
     echo "<li>$data[$i][0] - $data[$i][1]</li>";
+}
+echo '</ul>';
+
+```
+
+---
+
+```
+$people = $db->query("INSERT LONG, COMPLICATED SQL QUERY HERE");
+
+echo '<ul>';
+for ($i = 0; $i < count($people); $i++) {
+    echo "<li>$people[$i][0] - $people[$i][1]</li>";
+}
+echo '</ul>';
+
+```
+
+---
+
+```
+$people = $db->query("INSERT LONG, COMPLICATED SQL QUERY HERE");
+
+echo '<ul>';
+foreach ($people as $person) {
+    echo "<li>$person[0] - $person[1]</li>";
 }
 echo '</ul>';
 
@@ -198,141 +224,122 @@ return implode($numbers);
 ---
 
 ```
-private function handleBallPotted($state, BallPotted $event)
-{
-    $ball = $event->getBall();
-    $points = $ball->getValue();
-    $lastEvent = $state[0];
-    $player = $event->getPlayer();
-
-    if ($ball instanceof RedBall) {
-        $state[$player] += $points;
-    } else {
-        if ($lastEvent instanceof BallPotted && $lastEvent->getPlayer() == $player && $lastEvent->getBall() instanceof RedBall) {
-            $state[$player] += $points;
-        } else {
-            if ($player == 1) {
-                $state[2] += max(4, $points);
-            } else {
-                $state[1] += max(4, $points);
+if ($request->isValid()) {
+    $user = $request->getUser();
+    if ($user->hasPermissions()) {
+        foreach ($request->getUpdates() as $update) {
+            if ($update != null) {
+                $this->processUpdate($update);
             }
         }
+    } else {
+        throw new PermissionDeniedException;
     }
-
-    return $state;
+} else {
+    throw new InvalidRequestException;
 }
 ```
 
 ---
 
 ```
-private function handleBallPotted($state, BallPotted $event)
-{
-    ...
-    if ($ball instanceof RedBall) {
-        ...
+if (!$request->isValid()) {
+    throw new InvalidRequestException;
+} else {
+    $user = $request->getUser();
+    if ($user->hasPermissions()) {
+        foreach ($request->getUpdates() as $update) {
+            if ($update != null) {
+                $this->processUpdate($update);
+            }
+        }
     } else {
-        if ($lastEvent instanceof BallPotted
-            && $lastEvent->getPlayer() == $player
-            && $lastEvent->getBall() instanceof RedBall
-        ) {
-            ...
-        } else {
-            ...
+        throw new PermissionDeniedException;
+    }
+}
+```
+
+---
+
+```
+if (!$request->isValid()) {
+    throw new InvalidRequestException;
+}
+
+$user = $request->getUser();
+if ($user->hasPermissions()) {
+    foreach ($request->getUpdates() as $update) {
+        if ($update != null) {
+            $this->processUpdate($update);
         }
     }
-    ...
+} else {
+    throw new PermissionDeniedException;
 }
 ```
 
 ---
 
 ```
-private function playerPreviouslyPottedRedBall($lastEvent, $currentPlayer)
-{
-    return $lastEvent instanceof BallPotted
-        && $lastEvent->byPlayer() == $currentPlayer
-        && $lastEvent->getBall() instanceof RedBall;
-}
-```
 
----
+$this->guardAgainstInvalidRequest($request);
 
-```
-private function handleBallPotted($state, BallPotted $event)
-{
-    ...
-    if ($ball instanceof RedBall) {
-        ...
-    } else {
-        if ($this->playerPreviouslyPottedARedBall($lastEvent, $player)) {
-            ...
-        } else {
-            ...
+$user = $request->getUser();
+if ($user->hasPermissions()) {
+    foreach ($request->getUpdates() as $update) {
+        if ($update != null) {
+            $this->processUpdate($update);
         }
     }
-    ...
+} else {
+    throw new PermissionDeniedException;
 }
 ```
 
 ---
 
 ```
-private function handleBallPotted($state, BallPotted $event)
-{
-    ...
-    if ($ball instanceof RedBall) {
-        $state[$player] += $points;
-    } elseif ($this->playerPreviouslyPottedARedBall($lastEvent, $player)) {
-        $state[$player] += $points;
-    } else {
-        if (...) {
-            ...
-        } else {
-            ...
-        }
+
+$this->guardAgainstInvalidRequest($request);
+
+$user = $request->getUser();
+if (!$user->hasPermissions()) {
+    throw new PermissionDeniedException;
+}
+
+foreach ($request->getUpdates() as $update) {
+    if ($update != null) {
+        $this->processUpdate($update);
     }
-    ...
 }
 ```
 
 ---
 
 ```
-private function handleBallPotted($state, BallPotted $event)
-{
-    ...
-    if ($ball instanceof RedBall
-        || $this->playerPreviouslyPottedARedBall($lastEvent, $player)
-    ) {
-        $state[$player] += $points;
-    } else {
-        if (...) {
-            ...
-        } else {
-            ...
-        }
+
+$this->guardAgainstInvalidRequest($request);
+
+$this->guardAuthorisedUser($request->getUser());
+
+foreach ($request->getUpdates() as $update) {
+    if ($update != null) {
+        $this->processUpdate($update);
     }
-    ...
 }
 ```
 
 ---
 
 ```
-private function handleBallPotted($score, $ballPotted, $lastEvent)
-{
-    $points = $ballPotted->getBall()->getValue();
-    $player = $ballPotted->byPlayer();
 
-    if ($ballPotted->isRed()
-        || $this->playerPreviouslyPottedRedBall($lastEvent, $player)
-    ) {
-        return $score->awardPointsToPlayer($points, $player);
-    }
+$this->guardAgainstInvalidRequest($request);
 
-    return $score->awardPointsToOpponent(max(4, $points), $player);
-}
+$this->guardAuthorisedUser($request->getUser());
+
+$updates = array_filter($request->getUpdates());
+
+$this->processUpdates($updates);
 ```
 
 ---
